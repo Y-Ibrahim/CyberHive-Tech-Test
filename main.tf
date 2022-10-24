@@ -34,7 +34,7 @@
 # module "aws_account" {
 #   source =  "./modules/account"
 #   name   =  "development_account"
-#   email  =  "gloomkid@hotmail.com"
+#   email  =  ""
 #   role_name = "developer"
 # }
 
