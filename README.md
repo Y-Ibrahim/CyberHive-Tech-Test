@@ -24,14 +24,17 @@ e. Ensure that Apache2 is started and it’s service is enabled on startup
 
 
 # How to run script
-run ssh-keygen -f test-key
 
-terraform init
+The script should run by simply running terraform apply on the root module. Do note however that you might have to verify the authenticity of the remote host in order for the ansible config to run, so all you'd need to do is type in 'yes' when prompted on the terminal.
 
-terraform apply
+
+
+# providers.tf
+contains config for the default provider, as well as the provider for the newly created AWS account. This is so I can provision resources within the new account.
+
 
 # Account
-contains resources for setting up an AWS account via AWS organizations, currently not functioning
+contains resources for setting up an AWS account via AWS organizations, currently not functioning as I've expereinced issues with creating/removing accounts.
 
 # EC2
 contains resources for building out the ec2 instance, as well as the security group, vpc, subnet and ig
