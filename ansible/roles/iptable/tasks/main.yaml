@@ -1,0 +1,40 @@
+--- 
+  
+  - name: Allow SSH
+    ansible.builtin.iptables:
+      chain: INPUT
+      protocol: tcp
+      destination_port: 22
+      ctstate: NEW
+      jump: ACCEPT
+      comment: Allow SSH rule
+    become: true
+
+  - name: Allow HTTP
+    ansible.builtin.iptables:
+      chain: INPUT
+      protocol: tcp
+      destination_port: 80    
+      ctstate: NEW
+      comment: Allow HTTP
+    become: true  
+
+  - name: Allow HTTPS
+    ansible.builtin.iptables: 
+      chain: INPUT
+      protocool: tcp
+      destination_port: 443
+      ctstate: NEW
+      jump: ACCEPT
+      comment: Allow HTTPS
+    become: true  
+
+  - name: ALLOW ICMP
+    ansible.builtin.iptables:
+      chain: INPUT
+      protocol: icmp
+      jump: ACCEPT
+      cstate: NEW
+    become: true      
+
+  

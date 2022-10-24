@@ -1,0 +1,5 @@
+---
+  - name: Configure hostname of system
+    ansible.builtin.hostname:
+      name: "apache-server"
+    become: true  

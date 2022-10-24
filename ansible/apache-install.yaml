@@ -1,0 +1,14 @@
+---
+  - name: install apache and configure iptable 
+    hosts: all
+    remote_user: ubuntu
+    become: yes
+
+    roles:
+      - config-system
+
+    roles:
+      - apache
+    
+    
+
