@@ -1,3 +1,4 @@
+# default to local backend for state
 terraform {
   required_providers {
     aws = {
@@ -17,8 +18,8 @@ provider "aws" {
 
 # Provider for newly created aws account
 provider "aws" {
-      alias = "new_account"
-      region = "us-east-1"
+  alias  = "new_account"
+  region = "us-east-1"
   # other provider config
   assume_role {
     # Assume the organization access role

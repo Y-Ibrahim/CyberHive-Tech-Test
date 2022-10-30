@@ -29,6 +29,12 @@ The script should run by simply running terraform apply on the root module. Do n
 
 
 
+1. export $AWS_PROFILE 
+2. run terraform init and terraform apply to provision the s3 bucket with  dynamodb_locking
+3. uncomment out the aws_instance module to provision out the ec2 instance
+4. 
+
+
 # providers.tf
 contains config for the default provider, as well as the provider for the newly created AWS account. This is so I can provision resources within the new account.
 
@@ -37,7 +43,7 @@ contains config for the default provider, as well as the provider for the newly 
 contains resources for setting up an AWS account via AWS organizations, currently not functioning as I've expereinced issues with creating/removing accounts.
 
 # EC2
-contains resources for building out the ec2 instance, as well as the security group, vpc, subnet and ig
+contains resources for building out the ec2 instances on each subnet, as well as the security group, vpc, subnet and ig
 
 # ansible
 contains yaml files needed to configure the newly created instance

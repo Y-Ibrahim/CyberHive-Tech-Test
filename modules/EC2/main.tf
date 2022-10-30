@@ -6,7 +6,17 @@ resource "aws_key_pair" "test_server-key"  {
 
 }
 
-# create security group for instance
+# Create new vpc
+resource "aws_vpc" "new_vpc" {
+  cidr_block       = var.vpc_cidr
+
+
+  tags = {
+    Name = "main"
+  }
+}
+
+# create security group for instances
 resource "aws_security_group" "test_server_sg" {
   name = var.test-server-sg
   description = "allow SSH, HTTP and HTTPs traffic for this instance"
@@ -61,85 +71,84 @@ resource "aws_security_group" "test_server_sg" {
 }
 
 
-# launch ec2 instance 
+# Create 3 new subnets within the newly created vpc
+ resource "aws_subnet" "new_subnets" {
+  for_each = var.configuration
+  cidr_block = each.value.cidr
+  vpc_id = aws_vpc.new_vpc.id
+  availability_zone = each.value.availability_zone
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name = each.key
+  }
+}
+
+# Create network interface in each EC2 instance
+# resource "aws_network_interface" "foo" {
+#   for_each = var.configuration
+#   subnet_id   = aws_subnet.my_subnet.id
+#   private_ips = ["172.16.10.100"]
+
+#   tags = {
+#     Name = "primary_network_interface"
+#   }
+# }
+
+# launch ec2 instance in each subnet
 resource "aws_instance" "test_server" {
+  for_each = var.configuration
   ami = "ami-08c40ec9ead489470"
   instance_type = "t2.micro"
   security_groups = [aws_security_group.test_server_sg.id]
   key_name = "test-key"
   associate_public_ip_address = true
-  subnet_id = aws_subnet.new_subnet.id
+  subnet_id = aws_subnet.new_subnets[each.key].id
+  user_data =  <<-EOF
+                #!/bin/bash
+                echo "*** Installing apache2"
+                sudo apt update -y
+                sudo apt install apache2 -y
+                echo "*** Completed Installing apache2"
+                EOF
+
+
+  
   
   # remote-exec provisioner will wait until an ssh connection can be made and run local-exec
-  provisioner "remote-exec" {
-    inline = ["echo 'Wait until ssH is ready'"]
+  # provisioner "remote-exec" {
+  #   inline = ["echo 'Wait until SSH is ready'"]
 
-    connection {
-      type = "ssh"
-      user = "ubuntu"
-      private_key = file("./test-key")
-      host = aws_instance.test_server.public_ip
-    }
-  }  
+  #   connection {
+  #     type = "ssh"
+  #     user = "ubuntu"
+  #     private_key = file("./test-key")
+  #     host = aws_instance.test_server.*.public_ip
+  #   }
+  # }  
 
-  provisioner "local-exec" {
-    command = "ansible-playbook -i ${aws_instance.test_server.public_ip}, --private-key ./test-key ./ansible/apache-install.yaml"
-    # command = "sleep 120; ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -u ubuntu --private-key ./test-key -i '${aws_instance.test_server.public_ip},' ./ansible/apache-install.yaml"
-  }          
+  # provisioner "local-exec" {
+  #   command = "ansible-playbook -i ${aws_instance.test_server.*.public_ip}, --private-key ./test-key ./ansible/apache-install.yaml"
+  # }          
   
  
   tags = {
-    "Name" = var.instance_name 
+    "Name" = each.key
   }
+
+  depends_on = [
+    aws_subnet.new_subnets
+  ]
 }
 
-resource "aws_vpc" "new_vpc" {
-    cidr_block = var.vpc_cidr
-    enable_dns_hostnames = true
-    tags = {
-        Name = "new vpc"
-    }
-
-}
-
-# create internet gateway
-resource "aws_internet_gateway" "gateway" {
-    vpc_id = aws_vpc.new_vpc.id
-    
-    tags = {
-        Name = "Gateway"
-    }
-
-    depends_on = [
-      aws_vpc.new_vpc
-    ]
-  
-    
- }
-
-
-# Create subnet
-resource "aws_subnet" "new_subnet" {
-    # count = "${length(data.aws_availability_zones.availabile.names)}"
-    vpc_id = aws_vpc.new_vpc.id
-    cidr_block = var.vpc_cidr
-    # availability_zone = "${data.aws_availability_zones.available.names[count.index]}"
-    availability_zone = "us-east-1c"
-    map_public_ip_on_launch = true
-
-    tags = {
-        Name = "PublicSubnet"
-    }
-  
-}
-
-# Create route table and associate it with subnet
+# Create route table, attach vpc igw 
 resource "aws_route_table" "new_rt" {
   vpc_id = aws_vpc.new_vpc.id
+  # vpc_id = module.vpc.vpc_id
 
   route {
     cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.gateway.id
+    gateway_id = aws_internet_gateway.gw.id
   }
 
   tags = {
@@ -147,7 +156,23 @@ resource "aws_route_table" "new_rt" {
   }
 }
 
+
+
+# Associate each subnet with the custom route table
 resource "aws_route_table_association" "public_rt_asso" {
-  subnet_id      = aws_subnet.new_subnet.id
+  for_each = var.configuration
+  subnet_id      = aws_subnet.new_subnets[each.key].id
   route_table_id = aws_route_table.new_rt.id
+
+  depends_on = [
+    aws_route_table.new_rt
+  ]
+}
+
+resource "aws_internet_gateway" "gw" {
+  vpc_id = aws_vpc.new_vpc.id
+
+  tags = {
+    Name = "test-igw"
+  }
 }

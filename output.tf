@@ -11,9 +11,13 @@
 #     value = module.aws_iam_account.arn
 # }
 
-output "public-ip" {
-    value = module.aws_instance.public-ip
-  
-}
+# output "public-ip" {
+#   value = module.aws_instance.public-ip
+
+# }
 
 
+# output "public_subnets" {
+#     value = module.vpc.public_subnets
+
+# }
